@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>BluCast - Weather</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --light-bg: linear-gradient(135deg, #d1f4ff, #a1e1f5);
+      --dark-bg: linear-gradient(135deg, #0c1e3a, #1a2a4f);
+      --card-bg-light: rgba(255, 255, 255, 0.7);
+      --card-bg-dark: rgba(20, 30, 50, 0.6);
+      --font: 'Segoe UI', sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: var(--font);
+    }
+
+    body {
+      background: var(--light-bg);
+      transition: background 0.8s ease;
+      color: #1e1e1e;
+    }
+
+    body.dark {
+      background: var(--dark-bg);
+      color: #eee;
+    }
+
+    .app-container {
+      max-width: 650px;
+      margin: auto;
+      padding: 30px;
+      backdrop-filter: blur(10px);
+    }
+
+    header {
+      text-align: center;
+      padding: 30px 0 10px;
+    }
+
+    .logo {
+      font-size: 3.5rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, #00bfff, #007fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 15px rgba(0, 191, 255, 0.2);
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 10px #00bfff66; }
+      to   { text-shadow: 0 0 20px #007fff; }
+    }
+
+    .toggle-mode {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: #ffffffaa;
+      border: none;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      border-radius: 20px;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: all 0.3s ease;
+    }
+
+    .toggle-mode:hover {
+      background: #eeeeeecc;
+    }
+
+    .card {
+      background: var(--card-bg-light);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      margin-top: 20px;
+      transition: background 0.6s;
+    }
+
+    body.dark .card {
+      background: var(--card-bg-dark);
+    }
+
+    .search-bar {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .search-bar input {
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      width: 70%;
+    }
+
+    .search-bar button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 10px;
+      background: #00bfff;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .weather-info {
+      text-align: center;
+    }
+
+    .temp {
+      font-size: 3rem;
+      font-weight: 700;
+    }
+
+    .desc {
+      margin-bottom: 10px;
+      color: #555;
+    }
+
+    .extra-info {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+    }
+
+    .forecast {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    .day {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.4);
+    }
+
+    /* === BACKGROUND ELEMENTS === */
+    .bg-anim {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .cloud {
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+      opacity: 0.3;
+      animation: floatCloud 60s linear infinite;
+    }
+
+    .cloud.one {
+      width: 180px; height: 60px;
+      top: 20%; left: -200px;
+      animation-delay: 0s;
+    }
+
+    .cloud.two {
+      width: 120px; height: 50px;
+      top: 40%; left: -150px;
+      animation-delay: 15s;
+    }
+
+    @keyframes floatCloud {
+      0% { left: -250px; }
+      100% { left: 110%; }
+    }
+
+    .stars {
+      position: absolute;
+      width: 2px; height: 2px;
+      background: white;
+      border-radius: 50%;
+      animation: twinkle 2s infinite ease-in-out alternate;
+    }
+
+    .stars:nth-child(odd) { animation-duration: 3s; }
+
+    @keyframes twinkle {
+      from { opacity: 0.2; }
+      to   { opacity: 1; }
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #777;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <button class="toggle-mode" onclick="toggleMode()">Toggle Theme</button>
+
+  <div class="bg-anim" id="background">
+    <!-- clouds or stars go here dynamically -->
+    <div class="cloud one"></div>
+    <div class="cloud two"></div>
+  </div>
+
+  <header>
+    <div class="logo">BluCast</div>
+  </header>
+
+  <div class="app-container">
+    <div class="card">
+      <div class="search-bar">
+        <input type="text" id="cityInput" placeholder="Enter city..." />
+        <button onclick="getWeather()">Get Weather</button>
+      </div>
+
+      <div class="weather-info">
+        <div class="temp" id="temperature">--°C</div>
+        <div class="desc" id="weatherDesc">--</div>
+      </div>
+
+      <div class="extra-info">
+        <div id="sunrise">🌅 --</div>
+        <div id="sunset">🌇 --</div>
+      </div>
+
+      <div class="forecast">
+        <div class="day" id="day1">--</div>
+        <div class="day" id="day2">--</div>
+        <div class="day" id="day3">--</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2025 BluCast. Built with ❤️ and CSS animation.
+  </footer>
+
+  <script>
+    const API_KEY = "4bc72b96a2189631d797b3ccb6b2922d"; // Replace with your OpenWeather API key
+
+    function getWeather() {
+      const city = document.getElementById("cityInput").value;
+      fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("temperature").innerText = `${data.main.temp.toFixed(1)}°C`;
+          document.getElementById("weatherDesc").innerText = data.weather[0].description;
+          document.getElementById("sunrise").innerText = "🌅 " + new Date(data.sys.sunrise * 1000).toLocaleTimeString();
+          document.getElementById("sunset").innerText = "🌇 " + new Date(data.sys.sunset * 1000).toLocaleTimeString();
+        });
+
+      fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${API_KEY}&units=metric`)
+        .then(res => res.json())
+        .then(data => {
+          [1, 2, 3].forEach((n, i) => {
+            const dayData = data.list[n * 8];
+            const date = new Date(dayData.dt * 1000);
+            const name = date.toLocaleDateString(undefined, { weekday: 'short' });
+            const desc = dayData.weather[0].main;
+            const temp = dayData.main.temp.toFixed(1);
+            document.getElementById(`day${i+1}`).innerHTML = `<strong>${name}</strong><br>${desc}<br>${temp}°C`;
+          });
+        });
+    }
+
+    function toggleMode() {
+      const body = document.body;
+      const bg = document.getElementById('background');
+      body.classList.toggle('dark');
+
+      // remove all bg elements
+      bg.innerHTML = '';
+
+      if (body.classList.contains('dark')) {
+        // Add stars
+        for (let i = 0; i < 50; i++) {
+          const star = document.createElement('div');
+          star.className = 'stars';
+          star.style.top = `${Math.random() * 100}vh`;
+          star.style.left = `${Math.random() * 100}vw`;
+          bg.appendChild(star);
+        }
+      } else {
+        // Add clouds
+        const cloud1 = document.createElement('div');
+        cloud1.className = 'cloud one';
+        const cloud2 = document.createElement('div');
+        cloud2.className = 'cloud two';
+        bg.appendChild(cloud1);
+        bg.appendChild(cloud2);
+      }
+    }
+
+    // Load with light clouds by default
+    window.onload = toggleMode; // trigger once to set theme (light)
+    window.onload = () => {
+      document.body.classList.remove('dark');
+      toggleMode(); // reset to light mode with clouds
+    };
+  </script>
+</body>
+</html>
+
